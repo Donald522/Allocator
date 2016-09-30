@@ -93,7 +93,8 @@ void Allocator::realloc(Pointer &p, std::size_t N) {
     if(totalFreeSize >= N) {
         this->defrag();
         auto last = --((this->allocatedBlocks).end());
-        auto preLast = --last;
+        auto preLast = last;
+        --preLast;
         if((char*)(*last)->getBase() - (char*)(*preLast)->getBase() - (*preLast)->getSize() >= N) {
             for (int i = 0; i < (*cur)->getSize(); ++i) {
                 *((char *) (*preLast)->getBase() + (*preLast)->getSize() + i) =

@@ -29,7 +29,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 SET(SOURCES
         src/Allocator.cpp
         src/main.cpp
-        include/Pointer.h src/Pointer.cpp src/Block.cpp include/Block.h include/Block.h src/Block.cpp include/P.h)
+        include/Pointer.h src/Pointer.cpp src/Block.cpp include/Block.h include/Block.h src/Block.cpp)
 
 
 
