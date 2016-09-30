@@ -320,6 +320,36 @@ TEST(Allocator, ReallocGrow) {
     a.free(p2);
 }
 
+TEST(Allocator, ReallocWithRebase) {
+    char buffer[10] = {0};
+
+    Allocator a(buffer, sizeof(buffer));
+    Pointer p1 = a.alloc(2);
+    writeTo(p1, 2);
+    EXPECT_TRUE(isDataOk(p1, 2));
+
+    Pointer p2 = a.alloc(1);
+    writeTo(p2, 1);
+    EXPECT_TRUE(isDataOk(p2, 1));
+
+    Pointer p3 = a.alloc(4);
+    writeTo(p3, 4);
+    EXPECT_TRUE(isDataOk(p3, 4));
+
+    a.free(p2);
+    EXPECT_EQ(p2.get(), nullptr);
+
+    void *ptr = p1.get();
+    a.realloc(p1, 4);
+    EXPECT_NE(p1.get(), ptr);
+    EXPECT_TRUE(isDataOk(p1, 2));
+    EXPECT_TRUE(isDataOk(p3, 4));
+
+    writeTo(p1, 4);
+    EXPECT_TRUE(isDataOk(p1, 4));
+    EXPECT_TRUE(isDataOk(p3, 4));
+}
+
 TEST(Allocator, ReallocWithSwap) {
     char buffer[10] = {0};
 
@@ -348,5 +378,6 @@ TEST(Allocator, ReallocWithSwap) {
     writeTo(p1, 6);
     EXPECT_TRUE(isDataOk(p1, 6));
     EXPECT_TRUE(isDataOk(p3, 3));
+
 }
 
