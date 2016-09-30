@@ -1,4 +1,5 @@
-#include "../include/allocator.h"
+#include "Allocator.h"
+#include "Pointer.h"
 
 #include <vector>
 #include <set>

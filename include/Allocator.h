@@ -1,6 +1,12 @@
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
+
 #include <stdexcept>
 #include <string>
 #include <list>
+
+class Pointer;
+class Block;
 
 enum class AllocErrorType {
     InvalidFree,
@@ -18,36 +24,6 @@ public:
     {}
 
     AllocErrorType getType() const { return type; }
-};
-
-class Allocator;
-
-class Block {
-public:
-    Block();
-    Block(void*, std::size_t);
-    void *getBase() const;
-    std::size_t getSize() const;
-    void setBase(void*);
-    void setSize(std::size_t);
-    Block& operator=(const Block&);
-private:
-    void *base;
-    std::size_t size;
-};
-
-class Pointer {
-public:
-    Pointer();
-    Pointer(Block*);
-    void *get() const;
-    void setBase(void*);
-    std::size_t getSize() const;
-    void setSize(std::size_t);
-    Block* getBlock() const;
-    void setBlock(Block*);
-private:
-    Block *block;
 };
 
 class Allocator {
@@ -71,3 +47,4 @@ private:
     std::list<Block*> allocatedBlocks;
 };
 
+#endif

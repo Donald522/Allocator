@@ -1,5 +1,5 @@
 
-#include "allocator.h"
+#include "Allocator.h"
 #include "gtest/gtest.h"
 
 int main(int argc, char **argv)

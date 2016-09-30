@@ -1,82 +1,8 @@
 #include <iostream>
 #include <algorithm>
-#include "../include/allocator.h"
-
-Block::Block() {
-    this->base = nullptr;
-    this->size = 0;
-}
-
-Block::Block(void *base, std::size_t size) {
-    this->base = base;
-    this->size = size;
-}
-
-void* Block::getBase() const {
-    return this->base;
-}
-
-std::size_t Block::getSize() const {
-    return this->size;
-}
-
-void Block::setBase(void *base) {
-    this->base = base;
-}
-
-void Block::setSize(std::size_t size) {
-    this->size = size;
-}
-
-Block& Block::operator=(const Block &other) {
-    if(this != &other) {
-        this->setBase(other.getBase());
-        this->setSize(other.getSize());
-    }
-}
-
-Pointer::Pointer() {
-    this->block = nullptr;
-}
-
-Pointer::Pointer(Block *block) {
-    this->block = block;
-}
-
-void* Pointer::get() const {
-    if(this->block == nullptr) {
-        return nullptr;
-    }
-    return this->block->getBase();
-}
-
-void Pointer::setBase(void *base) {
-    if(this->block != nullptr) {
-        this->block->setBase(base);
-    }
-}
-
-std::size_t Pointer::getSize() const {
-    if(this->block == nullptr) {
-        return 0;
-    }
-    return this->block->getSize();
-}
-
-void Pointer::setSize(std::size_t size) {
-    if(this->block != nullptr) {
-        this->block->setSize(size);
-    }
-}
-
-Block* Pointer::getBlock() const {
-    return this->block;
-}
-
-void Pointer::setBlock(Block *block) {
-    this->setBase(block->getBase());
-    this->setSize(block->getSize());
-}
+#include "../include/Allocator.h"
+#include "../include/Pointer.h"
+#include "../include/Block.h"
 
 Allocator::Allocator(void *base, std::size_t size) {
     this->base = base;
