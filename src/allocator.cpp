@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "../include/allocator.h"
 
 Block::Block() {
@@ -27,6 +28,13 @@ void Block::setSize(std::size_t size) {
     this->size = size;
 }
 
+Block& Block::operator=(const Block &other) {
+    if(this != &other) {
+        this->setBase(other.getBase());
+        this->setSize(other.getSize());
+    }
+}
+
 Pointer::Pointer() {
     this->block = nullptr;
 }
@@ -36,19 +44,38 @@ Pointer::Pointer(Block *block) {
 }
 
 void* Pointer::get() const {
+    if(this->block == nullptr) {
+        return nullptr;
+    }
     return this->block->getBase();
 }
 
 void Pointer::setBase(void *base) {
-    this->block->setBase(base);
+    if(this->block != nullptr) {
+        this->block->setBase(base);
+    }
 }
 
 std::size_t Pointer::getSize() const {
+    if(this->block == nullptr) {
+        return 0;
+    }
     return this->block->getSize();
 }
 
 void Pointer::setSize(std::size_t size) {
-    this->block->setSize(size);
+    if(this->block != nullptr) {
+        this->block->setSize(size);
+    }
+}
+
+Block* Pointer::getBlock() const {
+    return this->block;
+}
+
+void Pointer::setBlock(Block *block) {
+    this->setBase(block->getBase());
+    this->setSize(block->getSize());
 }
 
 Allocator::Allocator(void *base, std::size_t size) {
@@ -89,11 +116,91 @@ Pointer Allocator::alloc(std::size_t requestSize) {
 
 void Allocator::realloc(Pointer &p, std::size_t N) {
 
+    std::list<Block*>::iterator cur = std::find_if(
+            ++(this->allocatedBlocks.begin()),
+            this->allocatedBlocks.end(),
+            [&](const Block* block) {
+                return block->getBase() == p.get();
+            });
+    if(cur == this->allocatedBlocks.end()) {
+        p = this->alloc(N);
+        return;
+    }
+    std::list<Block*>::iterator prev = cur;
+    if(cur != (this->allocatedBlocks.begin())) {
+        --prev;
+    }
+    std::list<Block*>::iterator next = cur;
+    if(cur != --(this->allocatedBlocks.end())) {
+        ++next;
+    }
+    if((char*)(*next)->getBase() - (char*)(*cur)->getBase() >= N) {
+        (*cur)->setSize(N);
+        p.setBlock(*cur);
+        return;
+    }
+    if(((char*)(*next)->getBase() - (char*)(*cur)->getBase()) + ((char*)(*cur)->getBase() - (char*)(*prev)->getBase() - (*prev)->getSize()) >= N) {
+        for(int i = 0; i < (*cur)->getSize(); ++i) {
+            *((char*)(*prev)->getBase() + (*prev)->getSize() + i) = *((char*)(*cur)->getBase() + i);
+        }
+        (*cur)->setBase((char*)(*prev)->getBase() + (*prev)->getSize());
+        (*cur)->setSize(N);
+        p.setBlock(*cur);
+        return;
+    }
+    std::size_t totalFreeSize = (*cur)->getSize();
+    for(std::list<Block*>::iterator iterator = allocatedBlocks.begin(); iterator != --allocatedBlocks.end(); ++iterator) {
+        std::list<Block*>::iterator itNext = iterator;
+        itNext++;
+        std::size_t freeBlockSize = (char*)(*itNext)->getBase() - ((char*)(*iterator)->getBase() + (*iterator)->getSize());
+        totalFreeSize += freeBlockSize;
+        if(freeBlockSize >= N) {
+            for(int i = 0; i < (*cur)->getSize(); ++i) {
+                *((char*)(*iterator)->getBase() + (*iterator)->getSize() + i) = *((char*)(*cur)->getBase() + i);
+            }
+            (*cur)->setBase((char*)(*iterator)->getBase() + (*iterator)->getSize());
+            (*cur)->setSize(N);
+            p.setBlock(*cur);
+            return;
+        }
+    }
+    if(totalFreeSize >= N) {
+        this->defrag();
+        if((char*)(this->base) + this->size - (char*)(*(----(this->allocatedBlocks).end()))->getBase() - (*(----(this->allocatedBlocks).end()))->getSize() >= N) {
+            for (int i = 0; i < (*cur)->getSize(); ++i) {
+                *((char *) (*(----(this->allocatedBlocks).end()))->getBase() +
+                  (*(----(this->allocatedBlocks).end()))->getSize() + i) = *((char *) (*cur)->getBase() + i);
+            }
+            (*cur)->setBase((char *) (*(----(this->allocatedBlocks).end()))->getBase() +
+                            (*(----(this->allocatedBlocks).end()))->getSize());
+            (*cur)->setSize(N);
+        } else {
+            next = cur;
+            ++next;
+            while(next != --(this->allocatedBlocks).end()) {
+                this->swapPartsOfArray((char*)(*cur)->getBase(), (*cur)->getSize(), (*next)->getSize());
+                std::size_t curSize = (*cur)->getSize();
+                (*cur)->setSize((*next)->getSize());
+                (*next)->setBase((void*)((char*)(*cur)->getBase() + (*cur)->getSize()));
+                (*next)->setSize(curSize);
+
+                ++cur;
+                ++next;
+            }
+            (*cur)->setSize(N);
+        }
+        p.setBlock(*cur);
+        return;
+    }
 }
 
 void Allocator::free(Pointer &pointer) {
     for(std::list<Block*>::iterator it = allocatedBlocks.begin(); it != allocatedBlocks.end(); it++) {
         if((*it)->getBase() == pointer.get()) {
+            char *ptr = reinterpret_cast<char*>((*it)->getBase());
+            for(std::size_t i = 0; i < (*it)->getSize(); ++i) {
+                ptr[i] = 0;
+            }
             allocatedBlocks.erase(it);
             break;
         }
@@ -116,5 +223,25 @@ void Allocator::defrag() {
         }
         cur++;
         next++;
+    }
+}
+
+void Allocator::swapPartsOfArray(char *pInt, std::size_t size1, std::size_t size2) {
+    std::size_t length = (size1 + size2);
+    char tmp = 0;
+    for(int i = 0; i < length/2; ++i) {
+        tmp = *(pInt + i);
+        *(pInt + i) = *(pInt + length - 1 - i);
+        *(pInt + length - 1 - i) = tmp;
+    }
+    for(int i = 0; i < size2/2; ++i) {
+        tmp = *(pInt + i);
+        *(pInt + i) = *(pInt + size2 - 1 - i);
+        *(pInt + size2 - 1 - i) = tmp;
+    }
+    for(int i = 0; i < size1/2; ++i) {
+        tmp = *(pInt + size2 + i);
+        *(pInt + size2 + i) = *(pInt + size2 + size1 - 1 - i);
+        *(pInt + size2 + size1 - 1 - i) = tmp;
     }
 }

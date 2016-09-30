@@ -11,7 +11,7 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 set(EXECUTABLE_NAME "allocator")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O1")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -29,7 +29,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 SET(SOURCES
         src/allocator.cpp
         src/main.cpp
-        )
+    )
 
 
 

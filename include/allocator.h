@@ -30,6 +30,7 @@ public:
     std::size_t getSize() const;
     void setBase(void*);
     void setSize(std::size_t);
+    Block& operator=(const Block&);
 private:
     void *base;
     std::size_t size;
@@ -43,6 +44,8 @@ public:
     void setBase(void*);
     std::size_t getSize() const;
     void setSize(std::size_t);
+    Block* getBlock() const;
+    void setBlock(Block*);
 private:
     Block *block;
 };
@@ -60,6 +63,8 @@ public:
 private:
     Allocator(const Allocator&);
     Allocator& operator=(const Allocator&);
+
+    void swapPartsOfArray(char*, std::size_t, std::size_t);
 private:
     void *base;
     std::size_t size;
